@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Fretboard Quiz</title>
+        <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+        <style>
+            body {
+                text-align: center;
+                background-color: pink;
+                text-shadow: 1px 1px white;
+                font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+            }
+            #fret {
+                width: 1000px;
+                position: absolute;
+                top: 82px;
+                left: 140px;
+            }
+            .letter {
+                position: absolute;
+                font-size: 20px;
+                left: 120px;
+            }
+            #E1 {
+                top: 90px;
+            }
+            #B {
+                top: 130px;
+            }
+            #G {
+                top: 175px;
+            }
+            #D {
+                top: 215px;
+            }
+            #A {
+                top: 255px;
+            }
+            #E2 {
+                top: 300px;
+            }
+            #directions {
+                position: relative;
+                top: 200px;
+            }
+            #scoreTxt {
+                position: relative;
+                top: 200px;
+                font-size: 20px;
+            }
+            #inp {
+                position: relative;
+                top: 200px;
+                resize: none;
+                height: 25px;
+                width: 20px;
+                text-align: center;
+                font-size: 15px;
+                text-transform: uppercase;
+            }
+            #btns {
+                position: relative;
+                top: 200px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Fretboard Note Identification Quiz</h1>
+        <div id="begStuff">
+            <br><p>Please choose a mode.</p>
+            <button type="button" class="btn btn-success btn-lg" id="sharpBtn">Sharp Mode</button>
+            <button type="button" class="btn btn-primary btn-lg" id="flatBtn">Flat Mode</button>
+        </div>
+        <div id="everything" style="visibility:hidden;">
+            <img id="fret" src="fret.png">
+            <div class="letter" id="E1">E</div>
+            <div class="letter" id="B">B</div>
+            <div class="letter" id="G">G</div>
+            <div class="letter" id="D">D</div>
+            <div class="letter" id="A">A</div>
+            <div class="letter" id="E2">E</div>
+
+            <textarea id = "inp" maxlength = "1" autofocus></textarea>
+            <div id="btns">
+                <input type="radio" name="acc" value="" checked>&#9838; 
+                <input type="radio" name="acc" value="&remove#9839;">&#9839;
+                <input type="radio" name="acc" value="&remove#9837;">&#9837;
+            </div>
+
+            <div id="scoreTxt">Score: 0/0 (0%)</div>
+
+            <p id="directions">
+                Directions: Enter the note (not including accidentals) in the text box above.
+                Click on one of the radio buttons to specify whether the note is a natural, sharp, or flat.
+                Hit the enter key to submit.
+            </p>
+        </div>
+
+        <script>
+            // [Erow, Brow, Grow, Drow, Arow, Erow]
+            let sharps = [["F","F&#9839;","G","G&#9839;","A","A&#9839;","B","C","C&#9839;","D","D&#9839;","E"],
+                          ["C","C&#9839;","D","D&#9839;","E","F","F&#9839;","G","G&#9839;","A","A&#9839;","B"],
+                          ["G&#9839;","A","A&#9839;","B","C","C&#9839;","D","D&#9839;","E","F","F&#9839;","G"],
+                          ["D&#9839;","E","F","F&#9839;","G","G&#9839;","A","A&#9839;","B","C","C&#9839;","D"],
+                          ["A&#9839;","B","C","C&#9839;","D","D&#9839;","E","F","F&#9839;","G","G&#9839;","A"],
+                          ["F","F&#9839;","G","G&#9839;","A","A&#9839;","B","C","C&#9839;","D","D&#9839;","E"],
+                         ];
+            let flats =  [["F","G&#9837;","G","A&#9837;","A","B&#9837;","B","C","D&#9837;","D","E&#9837;","E"],
+                          ["C","D&#9837;","D","E&#9837;","E","F","G&#9837;","G","A&#9837;","A","B&#9837;","B"],
+                          ["A&#9837;","A","B&#9837;","B","C","D&#9837;","D","E&#9837;","E","F","G&#9837;","G"],
+                          ["E&#9837;","E","F","G&#9837;","G","A&#9837;","A","B&#9837;","B","C","D&#9837;","D"],
+                          ["B&#9837;","B","C","D&#9837;","D","E&#9837;","E","F","G&#9837;","G","A&#9837;","A"],
+                          ["F","G&#9837;","G","A&#9837;","A","B&#9837;","B","C","D&#9837;","D","E&#9837;","E"],
+                         ];
+            let xPlaces = [175,280,380,472,563,653,738,821,899,972,1041,1096];
+            let yPlaces = [87,128,171,214,254,297];
+            let quesLeft = 72;
+            let row, col, right=0, total=0;
+            let sharpMode; //a boolean
+            let scoreTxt = document.getElementById("scoreTxt");
+            let begStuff = document.getElementById("begStuff");
+            let everything = document.getElementById("everything");
+            let notes = [[],[],[],[],[],[]];
+
+            //create all the boxes
+            for(let i = 0; i < 6; i++) {
+                for(let j = 0; j < 12; j++) {
+                    notes[i][j] = document.createElement("div");
+                    notes[i][j].style = "position: absolute; font-size: 23px; background: rgba(0,0,128,0.8);" +
+                    "width: 38px; color: white; text-shadow: 0px 0px; top:" + yPlaces[i] + "px; left: " + xPlaces[j] +
+                    "px; visibility: hidden;";
+                    notes[i][j].innerHTML = "?";
+                    document.body.appendChild(notes[i][j]);
+                }
+            }
+
+            function startGame(sharp) {
+                sharpMode = sharp;
+                begStuff.style.visibility = "hidden";
+                everything.style = "visibility: visible";
+                row = Math.floor(Math.random() * 6);
+                col = Math.floor(Math.random() * 12);
+                notes[row][col].style.visibility = "visible";
+            }
+
+            $(document.getElementById("sharpBtn")).on("click", function() {
+                startGame(true);
+            });
+
+            $(document.getElementById("flatBtn")).on("click", function() {
+                startGame(false);
+            });
+
+            $(document).on("keyup", function(e) {
+                if(e.which == 13 && inp.value != "" && quesLeft > 0) {
+                    if(inp.value != "\n") {
+                        let ans = inp.value.toUpperCase();
+                        ans += document.querySelector('input[name="acc"]:checked').value;
+                        ans = ans.replace("remove","");
+                        let correctAns;
+                        if(sharpMode) {
+                            correctAns = sharps[row][col];
+                        } else {
+                            correctAns = flats[row][col];
+                        }
+                        if(ans == correctAns) {
+                            right++;
+                            notes[row][col].style.backgroundColor = "rgb(0,181,0,0.8)";
+                        } else {
+                            notes[row][col].style.backgroundColor = "rgb(255,0,0,0.8)";
+                        }
+                        if(sharpMode) {
+                            notes[row][col].innerHTML = sharps[row][col];
+                        } else {
+                            notes[row][col].innerHTML = flats[row][col];
+                        }
+                        
+                        //update score
+                        total++;
+                        scoreTxt.innerHTML = "Score: " + right + "/" + total + " (" + (100*right/total) + "%)";
+
+                        quesLeft--;
+                        console.log(quesLeft);
+                        if(quesLeft == 0) {
+                            return;
+                        }
+                        
+                        //put next question up
+                        while(true) {
+                            row = Math.floor(Math.random() * 6);
+                            col = Math.floor(Math.random() * 12);
+                            if(notes[row][col].style.visibility == "hidden") {
+                                notes[row][col].style.visibility = "visible";
+                                break;
+                            }
+                        }
+                    }
+                    inp.value = "";
+                }
+            });
+        </script>
+    </body>
+</html>
